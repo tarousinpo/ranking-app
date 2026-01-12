@@ -47,20 +47,22 @@
   </table>
 
   <script>
-    // スプレッドシートのJSON URL
-    const SHEET_URL = "https://spreadsheets.google.com/feeds/list/<SPREADSHEET_ID>/od6/public/values?alt=json";
+    // スプレッドシートのCSV形式URL
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWSwzkWgJm5mVl1o2edBnhQ7I09BTIaPCVaIjVgQaZxCMPgVMopgQrx05taLfoVibAwC7hGDj6AJtg/pub?output=csv";
 
     // ランキングデータを取得し表示
     async function fetchRanking() {
       try {
-        // スプレッドシートのデータを取得
+        // CSVデータを取得
         const response = await fetch(SHEET_URL);
-        const data = await response.json();
+        const text = await response.text();
 
-        // スプレッドシートのデータ解析
-        const entries = data.feed.entry.map(entry => ({
-          player: entry.gsx$プレイヤー名.$t, // 列名に対応
-          points: Number(entry.gsx$ポイント.$t), // 列名に対応
+        // CSVをパースしてデータに変換
+        const rows = text.split("\n").map(row => row.split(","));
+
+        const entries = rows.slice(1).map(row => ({
+          player: row[0], // A列（プレイヤー名）
+          points: Number(row[1]) // B列（ポイント）
         }));
 
         // ポイントでデータをソート
@@ -80,7 +82,9 @@
           tableBody.appendChild(row);
         });
       } catch (error) {
-        console.error("スプレッドシートのデータ取得に失敗しました:", error);
+        console.error("CSVデータの取得に失敗しました:", error);
+        const tableBody = document.querySelector("#rankingTable tbody");
+        tableBody.innerHTML = `<tr><td colspan="3">エラー: データの読み込みに失敗しました。</td></tr>`;
       }
     }
 
